@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import joblib
 
+from app.models.schemas import PredictionInput
+
 ml_models = {}
 
 species_names = ["setosa", "versicolor", "virginica"]
@@ -28,21 +30,14 @@ def root():
 
 @app.post("/predict")
 
-def predict(data: dict = {
-    
-    "sepal_length": 6.0,
-    "sepal_width": 2.7,
-    "petal_length": 4.5,
-    "petal_width": 1.5,
-    
-    }):
+def predict(data: PredictionInput):
     
     features = [[
         
-        data["sepal_length"],
-        data["sepal_width"],
-        data["petal_length"],
-        data["petal_width"],
+        data.sepal_length,
+        data.sepal_width,
+        data.petal_length,
+        data.petal_width,
         
     ]]
     
