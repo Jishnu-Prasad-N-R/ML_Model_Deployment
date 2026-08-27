@@ -9,3 +9,16 @@ class PredictionInput(BaseModel):
     petal_length: float = Field(..., gt=0, le=10, description="Petal length in cm, must be positive and no more than 10")
     
     petal_width: float = Field(..., gt=0, le=10, description="Petal width in cm, must be positive and no more than 10")
+    
+
+class PredictionOutput(BaseModel):
+    
+    prediction : str
+    
+    confidence : float
+    
+    model_version : str
+    
+    request_id : str
+    
+  
