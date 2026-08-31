@@ -37,3 +37,28 @@ returns the predicted species along with a confidence score.
 ## Tech Stack (planned)
 
 Python 3.11+, FastAPI, Pydantic, Uvicorn, scikit-learn, pytest, Docker, Prometheus
+
+## v2 Design Plan (Task 10 Challenge) 
+
+If /api/v2/predict needed to return an extra field — for example,
+a full per-class probability breakdown instead of just the top
+confidence score — here is what would change, and what would NOT:
+
+1. A new PredictionOutputV2 schema would be added to schemas.py.
+   The existing PredictionOutput would stay untouched, since any
+   client still calling /api/v1/predict is relying on that exact
+   shape never changing.
+
+2. A new file, app/routers/v2.py, would be created with its own
+   APIRouter(prefix="/api/v2"). It would NOT reuse v1's router or
+   modify v1.py — v1 and v2 live side by side, independently.
+
+3. The model itself, and the shared ml_models state, would be
+   reused as-is — versioning applies to the API's request/response
+   CONTRACT, not to the underlying model or business logic.
+
+4. In main.py, the new router would simply be included alongside
+   the existing one: app.include_router(v2_router).
+
+   This way, existing v1 clients are never affected by v2 changes —
+   which is the entire point of versioning.
