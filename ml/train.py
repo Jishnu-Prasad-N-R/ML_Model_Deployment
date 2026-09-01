@@ -4,7 +4,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-import joblib
+from datetime import datetime
+import joblib 
+import json
 
 data = load_iris()
 
@@ -37,3 +39,24 @@ print(f"Test accuracy: {accuracy:.4f}")
 joblib.dump(pipeline, "ml/saved_model/model.joblib")
 
 print("Model saved to ml/saved_model/model.joblib")
+
+#returning model metadate 
+metadata = {
+    
+    "model_type": "RandomForestClassifier",
+    
+    "version": "v1",
+    
+    "trained_on": datetime.now().isoformat(),
+    
+    "features": ["sepal_length", "sepal_width", "petal_length", "petal_width"],
+    
+    "test_accuracy": accuracy,
+    
+}
+
+with open("ml/saved_model/model_metadata.json", "w") as f:
+    
+    json.dump(metadata, f, indent=2)
+
+print("Metadata saved to ml/saved_model/model_metadata.json")

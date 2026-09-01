@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field 
 
 class PredictionInput(BaseModel):
     
@@ -21,4 +21,25 @@ class PredictionOutput(BaseModel):
     
     request_id : str
     
-  
+    
+class PredictionBatchInput(BaseModel):
+    
+    inputs: list[PredictionInput] = Field(..., min_length=1, max_length=100)
+
+
+class PredictionBatchOutput(BaseModel):
+    
+    predictions: list[PredictionOutput]
+    
+    count: int
+
+
+class ModelInfo(BaseModel):
+    
+    model_type: str
+    
+    version: str
+    
+    trained_on: str
+    
+    features: list[str]
