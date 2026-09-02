@@ -24,7 +24,7 @@ class PredictionOutput(BaseModel):
     
 class PredictionBatchInput(BaseModel):
     
-    inputs: list[PredictionInput] = Field(..., min_length=1, max_length=100)
+    inputs: list[PredictionInput] = Field(..., min_length=1)
 
 
 class PredictionBatchOutput(BaseModel):

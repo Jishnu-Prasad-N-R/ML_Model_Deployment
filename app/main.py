@@ -9,13 +9,14 @@ import json
 from app.models.state import ml_models , model_metadata
 from app.logging_config import logger
 from app.routers.v1 import router as v1_router
+from app.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     
-    ml_models["pipeline"] = joblib.load("ml/saved_model/model.joblib")
+    ml_models["pipeline"] = joblib.load(settings.MODEL_PATH)
     
-    with open("ml/saved_model/model_metadata.json") as f:
+    with open(settings.MODEL_METADATA_PATH) as f:
         
         model_metadata.update(json.load(f))
     
@@ -25,7 +26,7 @@ async def lifespan(app: FastAPI):
     
     ml_models.clear()
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan,title=settings.API_TITLE)
 
 app.include_router(v1_router)
 
