@@ -1,11 +1,11 @@
-def test_health_returns_200(client):
+def test_health_200(client):
     
     response = client.get("/api/v1/health")
     
     assert response.status_code == 200
 
 
-def test_health_returns_expected_shape(client):
+def test_health_expected_shape(client):
     
     response = client.get("/api/v1/health")
     

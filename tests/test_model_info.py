@@ -1,4 +1,4 @@
-def test_model_info_returns_expected_keys(client):
+def test_model_info(client):
     
     response = client.get("/api/v1/model-info")
     

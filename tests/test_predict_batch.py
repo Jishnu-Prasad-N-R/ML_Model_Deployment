@@ -1,6 +1,6 @@
 from app.config import settings
 
-def test_predict_batch_oversized_rejected(client):
+def test_predict_batch_oversized(client):
     
     oversized_batch = [
         {"sepal_length": 5.1, "sepal_width": 3.5, "petal_length": 1.4, "petal_width": 0.2}

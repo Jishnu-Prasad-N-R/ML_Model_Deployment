@@ -1,15 +1,16 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 import joblib
 import uuid
 import time
 import json
 
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from app.models.state import ml_models , model_metadata
 from app.logging_config import logger
 from app.routers.v1 import router as v1_router
 from app.config import settings
+from app.routers.v2 import router as v2_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,6 +30,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan,title=settings.API_TITLE)
 
 app.include_router(v1_router)
+
+app.include_router(v2_router)
 
 @app.middleware("http")
 

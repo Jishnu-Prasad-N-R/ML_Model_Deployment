@@ -43,3 +43,13 @@ class ModelInfo(BaseModel):
     trained_on: str
     
     features: list[str]
+    
+class PredictionOutputV2(BaseModel):
+    
+    prediction: str
+    
+    probabilities: dict[str, float]
+    
+    model_version: str
+    
+    request_id: str    
