@@ -62,3 +62,77 @@ confidence score — here is what would change, and what would NOT:
 
    This way, existing v1 clients are never affected by v2 changes —
    which is the entire point of versioning.
+
+## How to Launch This Project With Docker Compose
+
+The application is launched in Docker containers using Docker Compose.
+
+Docker Compose reads the file docker-compose.yml, which builds the FastAPI image, exposes the necessary port, sets up the environment variables from the .env file, and mounts the ml/saved_model directory with the saved model.
+
+## Prerequisites
+
+Make sure that Docker Desktop is installed on your system.
+
+## Launching the App
+
+To launch the app, open the terminal in the project folder and run the command:
+
+```bash
+
+docker compose up --build
+
+```
+
+It will build the image from the Dockerfile in the current project directory, create and launch the API container, expose port 8000, set up the environment variables from the .env file, and mount the ml/saved_model directory. The API will be available at the following address:
+
+http://localhost:8000
+
+The Swagger API documentation will be available at the following address:
+
+http://localhost:8000/docs
+
+If you want to restart the app without rebuilding the image, run the command:
+
+```bash
+
+docker compose up
+
+```
+
+Use the following command to stop the app:
+
+```bash
+
+docker compose down
+
+```
+
+This command stops and removes all the containers and networks that were created by the Docker Compose.
+
+To restart the API service, run the command:
+
+```bash
+
+docker compose restart api
+
+```
+
+## Model Volume
+
+The ml/saved_model directory is mounted to the container with the help of the volumes instruction.
+
+```yaml
+
+volumes:
+
+- ./ml/saved_model:/app/ml/saved_model
+
+```
+
+It allows to mount the directory where the saved model files are stored on the host machine into the container.
+
+If you retrain the model and want to replace the model files that are in the ml/saved_model directory with the new ones, you will not need to rebuild the Docker image. To apply the changes, you will need to restart the API service.
+
+## Docker Compose Service
+
+The application has only one service in the Docker Compose, which is responsible for running the FastAPI ML prediction API. However, the Docker Compose configuration can be extended to include other services, such as Prometheus.   
