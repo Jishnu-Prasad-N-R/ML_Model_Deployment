@@ -1,14 +1,16 @@
-from pydantic import BaseModel, Field 
+from pydantic import BaseModel, Field, ConfigDict 
 
 class PredictionInput(BaseModel):
     
-    sepal_length: float = Field(..., gt=0, description="Sepal length in cm, must be positive")
+    model_config = ConfigDict(extra="forbid")
     
-    sepal_width: float = Field(..., gt=0, description="Sepal width in cm, must be positive")
+    sepal_length: float = Field(..., gt=0, le=10, description="Sepal length in cm, must be positive not more than 10")
     
-    petal_length: float = Field(..., gt=0, le=10, description="Petal length in cm, must be positive and no more than 10")
+    sepal_width: float = Field(..., gt=0, le=10, description="Sepal width in cm, must be positive not more than 10")
     
-    petal_width: float = Field(..., gt=0, le=10, description="Petal width in cm, must be positive and no more than 10")
+    petal_length: float = Field(..., gt=0, le=10, description="Petal length in cm, must be positive and not more than 10")
+    
+    petal_width: float = Field(..., gt=0, le=10, description="Petal width in cm, must be positive and not more than 10")
     
 
 class PredictionOutput(BaseModel):

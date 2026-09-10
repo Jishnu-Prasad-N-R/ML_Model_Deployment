@@ -1,4 +1,4 @@
-def test_v1_and_v2(client):
+def test_v1_and_v2(client, auth_headers):
 
     payload = {
 
@@ -8,9 +8,9 @@ def test_v1_and_v2(client):
         "petal_width": 0.2,
     }
 
-    v1_response = client.post("/api/v1/predict", json=payload)
+    v1_response = client.post("/api/v1/predict", json=payload, headers=auth_headers)
 
-    v2_response = client.post("/api/v2/predict", json=payload)
+    v2_response = client.post("/api/v2/predict", json=payload, headers=auth_headers)
 
     assert v1_response.status_code == 200
 

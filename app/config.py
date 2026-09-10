@@ -13,5 +13,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     
     MAX_BATCH_SIZE: int = 100
+    
+    API_KEY: str
+    
+    ALLOWED_ORIGINS: list[str]
 
 settings = Settings()

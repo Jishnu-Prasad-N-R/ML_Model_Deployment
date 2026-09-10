@@ -1,4 +1,4 @@
-def test_v2_predict_valid_input200(client):
+def test_v2_predict_valid_input200(client, auth_headers):
 
     payload = {
 
@@ -8,7 +8,7 @@ def test_v2_predict_valid_input200(client):
         "petal_width": 0.2,
     }
 
-    response = client.post("/api/v2/predict", json=payload)
+    response = client.post("/api/v2/predict", json=payload, headers=auth_headers)
 
     assert response.status_code == 200
 
@@ -20,10 +20,10 @@ def test_v2_predict_valid_input200(client):
 
     assert abs(sum(data["probabilities"].values()) - 1.0) < 0.01
 
-def test_v2_predict_missing_field422(client):
+def test_v2_predict_missing_field422(client, auth_headers):
 
     payload = {"sepal_length": 5.1, "sepal_width": 3.5, "petal_length": 1.4}
 
-    response = client.post("/api/v2/predict", json=payload)
+    response = client.post("/api/v2/predict", json=payload, headers=auth_headers)
 
     assert response.status_code == 422

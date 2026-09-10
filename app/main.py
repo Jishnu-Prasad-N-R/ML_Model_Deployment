@@ -11,6 +11,7 @@ from app.logging_config import logger
 from app.routers.v1 import router as v1_router
 from app.config import settings
 from app.routers.v2 import router as v2_router
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,6 +33,16 @@ app = FastAPI(lifespan=lifespan,title=settings.API_TITLE)
 app.include_router(v1_router)
 
 app.include_router(v2_router)
+
+app.add_middleware(
+    
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-API-Key"],
+    
+)
 
 @app.middleware("http")
 
