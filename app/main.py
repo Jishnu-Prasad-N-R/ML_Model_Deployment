@@ -12,6 +12,7 @@ from app.routers.v1 import router as v1_router
 from app.config import settings
 from app.routers.v2 import router as v2_router
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,6 +34,8 @@ app = FastAPI(lifespan=lifespan,title=settings.API_TITLE)
 app.include_router(v1_router)
 
 app.include_router(v2_router)
+
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
     
