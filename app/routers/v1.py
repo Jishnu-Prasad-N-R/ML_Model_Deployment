@@ -106,9 +106,13 @@ def predict_batch(data: PredictionBatchInput, request: Request):
     
     for pred, probs in zip(predictions, probabilities):
         
+        species = species_names[pred]
+         
+        prediction_counter.labels(predicted_class=species,model_version=model_version).inc()
+        
         results.append({
             
-            "prediction": species_names[pred],
+            "prediction": species,
             "confidence": float(max(probs)),
             "request_id": request_id,
             "model_version": model_version,
