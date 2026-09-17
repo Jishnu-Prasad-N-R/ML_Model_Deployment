@@ -1,6 +1,4 @@
-import asyncio
-import time
-import httpx
+import asyncio, time, httpx
 
 from app.config import settings
 

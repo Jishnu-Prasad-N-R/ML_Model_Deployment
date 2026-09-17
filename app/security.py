@@ -3,9 +3,9 @@ from fastapi import Header, HTTPException, status
 from app.config import settings
 
 async def verify_api_key(x_api_key: str | None = Header(default=None)):
-    """Dependency protection with an X-API-Key header requirement for access.
-       Health checks intentionally lack such protection because monitoring
-       systems should be able to access /health without authentication.
+    """API access is protected using an `X-API-Key` header, while the `/health` 
+    endpoint remains public so monitoring systems can check the API status without 
+    authentication.
     """
     
     if x_api_key is None or x_api_key != settings.API_KEY:

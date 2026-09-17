@@ -1,7 +1,4 @@
-import joblib
-import uuid
-import time
-import json
+import joblib, uuid, time, json
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -9,8 +6,8 @@ from fastapi.responses import JSONResponse
 from app.models.state import ml_models , model_metadata
 from app.logging_config import logger
 from app.routers.v1 import router as v1_router
-from app.config import settings
 from app.routers.v2 import router as v2_router
+from app.config import settings
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -28,6 +25,8 @@ async def lifespan(app: FastAPI):
     yield
     
     ml_models.clear()
+    
+    model_metadata.clear()
 
 app = FastAPI(lifespan=lifespan,title=settings.API_TITLE)
 

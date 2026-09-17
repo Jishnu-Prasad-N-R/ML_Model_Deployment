@@ -1,138 +1,670 @@
 # ML Model Deployment as a Monitored REST API
-# Iris Species Classifier
+
+## Iris Species Classifier
 
 ## Overview
 
-This project takes a trained ML model and turns it into a REST API that
-other programs can call over the internet — with input validation and
-monitoring — instead of just running predictions inside a notebook.
+This project turns a trained machine learning model into a production-style REST API using **FastAPI**.
+
+The API accepts Iris flower measurements, validates the input, performs inference using a **scikit-learn** model, and returns predictions through versioned endpoints.
+
+The project also includes:
+
+* Pydantic input validation
+* API versioning
+* API-key authentication
+* Batch prediction
+* Structured logging
+* Configuration management
+* Prometheus monitoring
+* Automated testing
+* Integration testing
+* Load testing
+* Docker and Docker Compose
+* Continuous integration via GitHub Actions
+
+The goal is to demonstrate the complete process of taking an ML model and turning it into a **secure, tested, monitored, and containerized API service**.
+
+---
 
 ## Dataset & Problem
 
-Using scikit-learn's built-in Iris dataset (load_iris()) — The model
-classifies a flower into one of three species (setosa, versicolor,
-virginica) based on four measurements: sepal length, sepal width, petal
-length, and petal width.
+The project uses scikit-learn's built-in **Iris dataset** with `load_iris()`.
+
+The model classifies a flower into one of three species:
+
+* `setosa`
+* `versicolor`
+* `virginica`
+
+It uses four input features:
+
+* Sepal length
+* Sepal width
+* Petal length
+* Petal width
+
+The trained scikit-learn pipeline is saved using **joblib** and loaded once when the FastAPI application starts.
+
+---
 
 ## API Contract
 
-The /predict endpoint takes in four measurements of an iris flower —
-its sepal length, sepal width, petal length, and petal width — and tells
-you which of three species (setosa, versicolor, or virginica) the flower
-most likely belongs to, along with a confidence score showing how sure
-the model is about that answer.
+### v1 Prediction Endpoint
 
-In Technically: it accepts a POST request with four numeric fields
-(sepal_length, sepal_width, petal_length, petal_width) and
-returns the predicted species along with a confidence score.
+**POST** `/api/v1/predict`
+
+### Example Request
+
+```json
+{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
+}
+```
+
+### Example Response
+
+```json
+{
+  "prediction": "setosa",
+  "confidence": 1.0,
+  "request_id": "generated-request-id",
+  "model_version": "v1"
+}
+```
+
+Protected prediction and model-information endpoints require API-key authentication, while public endpoints such as `/api/v1/health` and `/metrics` remain accessible without an API key.
+
+---
+
+## Architecture
+
+```text
+Client / Swagger / curl
+        ↓
+Docker / Uvicorn
+        ↓
+FastAPI
+        ↓
+Request Logging Middleware
+        ↓
+API Key Authentication
+        ↓
+Pydantic Validation
+        ↓
+API Router (v1 or v2)
+        ↓
+Prediction Service (app/service/prediction.py)
+        ↓
+Scikit-learn Model
+        ↓
+Prediction Response
+        ↓
+Structured Logging + Prometheus Metrics
+```
+
+The model is loaded once during application startup using FastAPI's **lifespan** mechanism and reused for every prediction request.
+
+---
 
 ## Request Flow
 
-1. Client sends a  POST  request to  /predict  with the 4 measurements.
-2. Pydantic validates that all fields are present and are the correct type.
-3. If invalid, FastAPI automatically returns a  422  error, and the model never runs.
-4. If valid, the pre-loaded model runs  model.predict()  to get the species, and  model.predict_proba()  to get the confidence score.
-5. The API returns the prediction and confidence as a JSON response.
+The request follows these steps:
 
-## Tech Stack (planned)
+1. The client sends a request to the API.
+2. FastAPI receives the request.
+3. A unique request ID is created in middleware.
+4. Protected endpoints verify the `X-API-Key` header.
+5. Pydantic validates the input:
 
-Python 3.11+, FastAPI, Pydantic, Uvicorn, scikit-learn, pytest, Docker, Prometheus
+   * Data types
+   * Allowed ranges
+   * Required fields
+   * Unexpected fields
+6. Invalid input is rejected before the model runs.
+7. Valid input is passed to the prediction service.
+8. The pre-loaded scikit-learn model performs inference.
+9. The API returns the prediction response.
+10. Logs and Prometheus metrics are updated.
 
-## v2 Design Plan (Task 10 Challenge) 
+---
 
-If /api/v2/predict needed to return an extra field — for example,
-a full per-class probability breakdown instead of just the top
-confidence score — here is what would change, and what would NOT:
+## Tech Stack
 
-1. A new PredictionOutputV2 schema would be added to schemas.py.
-   The existing PredictionOutput would stay untouched, since any
-   client still calling /api/v1/predict is relying on that exact
-   shape never changing.
+| Technology                        | Purpose                     |
+| --------------------------------- | --------------------------- |
+| Python 3.13                       | Programming language        |
+| FastAPI                           | REST API framework          |
+| Pydantic                          | Request/response validation |
+| pydantic-settings                 | Configuration management    |
+| Uvicorn                           | ASGI server                 |
+| scikit-learn                      | Machine learning model      |
+| joblib                            | Model serialization         |
+| httpx                             | HTTP client and testing     |
+| pytest                            | Automated testing           |
+| Docker                            | Containerization            |
+| Docker Compose                    | Container orchestration     |
+| prometheus-client                 | Custom Prometheus metrics   |
+| prometheus-fastapi-instrumentator | FastAPI monitoring          |
+| GitHub Actions                    | Continuous integration      |
 
-2. A new file, app/routers/v2.py, would be created with its own
-   APIRouter(prefix="/api/v2"). It would NOT reuse v1's router or
-   modify v1.py — v1 and v2 live side by side, independently.
+---
 
-3. The model itself, and the shared ml_models state, would be
-   reused as-is — versioning applies to the API's request/response
-   CONTRACT, not to the underlying model or business logic.
+# API Versioning
 
-4. In main.py, the new router would simply be included alongside
-   the existing one: app.include_router(v2_router).
+## API v1
 
-   This way, existing v1 clients are never affected by v2 changes —
-   which is the entire point of versioning.
+**POST** `/api/v1/predict`
 
-## How to Launch This Project With Docker Compose
+Returns:
 
-The application is launched in Docker containers using Docker Compose.
+* `prediction`
+* `confidence`
+* `request_id`
+* `model_version`
 
-Docker Compose reads the file docker-compose.yml, which builds the FastAPI image, exposes the necessary port, sets up the environment variables from the .env file, and mounts the ml/saved_model directory with the saved model.
+## API v2
+
+**POST** `/api/v2/predict`
+
+Returns:
+
+* `prediction`
+* `probabilities`
+* `request_id`
+* `model_version`
+
+The v2 endpoint provides a full probability breakdown across all three species.
+
+API versioning allows new response formats to be introduced without breaking clients that still depend on v1.
+
+The v1 router, schema, and behavior were not modified when v2 was added.
+
+---
+
+# API Endpoints
+
+| Method | Endpoint                | Auth | Purpose                            |
+| ------ | ----------------------- | ---- | ---------------------------------- |
+| GET    | `/`                     | No   | API status                         |
+| GET    | `/api/v1/health`        | No   | Health and model status            |
+| POST   | `/api/v1/predict`       | Yes  | Single prediction with confidence  |
+| POST   | `/api/v1/predict-batch` | Yes  | Batch predictions (1–100 inputs)   |
+| GET    | `/api/v1/model-info`    | Yes  | Model metadata                     |
+| POST   | `/api/v2/predict`       | Yes  | Prediction with full probabilities |
+| GET    | `/metrics`              | No   | Prometheus metrics                 |
+| GET    | `/docs`                 | No   | Swagger documentation              |
+
+---
+
+# Security and Validation
+
+Protected endpoints require an `X-API-Key` header.
+
+The API key is stored in `.env` and is never committed to Git.
+
+## Pydantic Validation
+
+Pydantic validation checks:
+
+* Required fields
+* Numeric types
+* Allowed value ranges
+* Unexpected extra fields
+
+Unexpected fields are rejected using:
+
+```python
+extra="forbid"
+```
+
+Invalid requests are rejected with **HTTP 422** before inference runs.
+
+Missing or incorrect API keys are rejected with **HTTP 401**.
+
+---
+
+# Configuration
+
+Configuration is handled using **pydantic-settings** and loaded from `.env`.
+
+| Variable              | Purpose                                          |
+| --------------------- | ------------------------------------------------ |
+| `API_TITLE`           | Title shown in `/docs`                           |
+| `MODEL_PATH`          | Path to the trained model file                   |
+| `MODEL_METADATA_PATH` | Path to the model metadata JSON                  |
+| `LOG_LEVEL`           | Logging verbosity                                |
+| `MAX_BATCH_SIZE`      | Maximum inputs allowed per `/predict-batch` call |
+| `API_KEY`             | Secret required for protected endpoints          |
+| `ALLOWED_ORIGINS`     | CORS-allowed origins in JSON array format        |
+
+The `.env` file is git-ignored.
+
+The `.env.example` file documents the required variable names without containing real secret values.
+
+---
+
+# Monitoring and Logging
+
+Prometheus metrics are available at:
+
+```text
+/metrics
+```
+
+The API exposes default HTTP metrics such as:
+
+* Request count
+* Request latency
+* Request size
+* Response size
+
+It also provides a custom metric:
+
+```text
+ml_predictions_total
+```
+
+This metric tracks successful predictions and is labeled by:
+
+* Predicted class
+* Model version
+
+The metric is updated for both single and batch predictions.
+
+## Structured Logging
+
+Structured logs are written to:
+
+```text
+Console
+app/logs/app.log
+```
+
+The application uses rotating file logging.
+
+Logs include information such as:
+
+* Request ID
+* HTTP method
+* Request path
+* HTTP status code
+* Request duration
+* Prediction outcome
+* Errors
+
+---
+
+# Testing
+
+## Run the Full Pytest Suite
+
+```bash
+python -m pytest -v
+```
+
+---
+
+## Integration Testing
+
+Integration tests are executed against the live, running Docker container.
+
+Start the application:
+
+```bash
+docker compose up --build
+```
+
+Then run:
+
+```bash
+python -m pytest tests/integration/test_integration.py -v
+```
+
+### Result
+
+```text
+4 passed
+```
+
+The integration tests verify:
+
+1. Health endpoint
+2. Single prediction
+3. Batch prediction
+4. Prometheus metrics
+
+These tests run against the **real containerized API**, rather than only testing the application in-process.
+
+---
+
+## Load Testing
+
+The project also includes a basic concurrent load test.
+
+Run it using:
+
+```bash
+python -m scripts.load_test
+```
+
+The `-m` option is required because the script imports configuration from:
+
+```python
+app.config
+```
+
+Full load-test results, an observed anomaly between runs, and a genuine bug discovered and fixed during testing are documented in:
+
+```text
+TESTING.md
+```
+
+---
+
+# Running With Docker Compose
 
 ## Prerequisites
 
-Make sure that Docker Desktop is installed on your system.
+Before running the project, install:
 
-## Launching the App
+* Docker Desktop
+* Git
 
-To launch the app, open the terminal in the project folder and run the command:
+Create `.env` from `.env.example` and provide a real `API_KEY`.
+
+## Start the Application
 
 ```bash
-
 docker compose up --build
-
 ```
 
-It will build the image from the Dockerfile in the current project directory, create and launch the API container, expose port 8000, set up the environment variables from the .env file, and mount the ml/saved_model directory. The API will be available at the following address:
+The API will be available at:
 
+```text
 http://localhost:8000
+```
 
-The Swagger API documentation will be available at the following address:
+### Swagger Documentation
 
+```text
 http://localhost:8000/docs
+```
 
-If you want to restart the app without rebuilding the image, run the command:
+### Prometheus Metrics
+
+```text
+http://localhost:8000/metrics
+```
+
+---
+
+## Docker Compose Commands
+
+### Restart Without Rebuilding
 
 ```bash
-
 docker compose up
-
 ```
 
-Use the following command to stop the app:
+### Stop Everything
 
 ```bash
-
 docker compose down
-
 ```
 
-This command stops and removes all the containers and networks that were created by the Docker Compose.
+### Restart Only the API
 
-To restart the API service, run the command:
+For example, after replacing a retrained model:
 
 ```bash
-
 docker compose restart api
-
 ```
 
-## Model Volume
+---
 
-The ml/saved_model directory is mounted to the container with the help of the volumes instruction.
+## Model Volume Mount
+
+The `ml/saved_model` directory is bind-mounted into the container:
 
 ```yaml
-
 volumes:
-
-- ./ml/saved_model:/app/ml/saved_model
-
+  - ./ml/saved_model:/app/ml/saved_model
 ```
 
-It allows to mount the directory where the saved model files are stored on the host machine into the container.
+This means a retrained model can be placed into that directory and loaded after restarting the API.
 
-If you retrain the model and want to replace the model files that are in the ml/saved_model directory with the new ones, you will not need to rebuild the Docker image. To apply the changes, you will need to restart the API service.
+For example:
 
-## Docker Compose Service
+```bash
+docker compose restart api
+```
 
-The application has only one service in the Docker Compose, which is responsible for running the FastAPI ML prediction API. However, the Docker Compose configuration can be extended to include other services, such as Prometheus.   
+No Docker image rebuild is required when only the model file is replaced.
+
+---
+
+# Local Development Without Docker
+
+Create and activate a virtual environment:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Create the environment file:
+
+```powershell
+cp .env.example .env
+```
+
+Train the model:
+
+```powershell
+python ml/train.py
+```
+
+Start the FastAPI development server:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+---
+
+# Example Requests
+
+## Health Check
+
+No API key is required.
+
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+---
+
+## v1 Prediction
+
+```bash
+curl -X POST http://localhost:8000/api/v1/predict \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2}'
+```
+
+---
+
+## v1 Batch Prediction
+
+```bash
+curl -X POST http://localhost:8000/api/v1/predict-batch \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"inputs":[{"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2}]}'
+```
+
+---
+
+## v1 Model Information
+
+```bash
+curl -H "X-API-Key: YOUR_API_KEY" \
+  http://localhost:8000/api/v1/model-info
+```
+
+---
+
+## v2 Prediction
+
+```bash
+curl -X POST http://localhost:8000/api/v2/predict \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2}'
+```
+
+---
+
+## Prometheus Metrics
+
+```bash
+curl http://localhost:8000/metrics
+```
+
+---
+
+# Deployment
+
+This project is fully reproducible with a single command:
+
+```bash
+docker compose up --build
+```
+
+A live public deployment, such as Render, Railway, or Fly.io, was not pursued for this submission.
+
+Docker Compose reproducibility was treated as satisfying the project's deployment requirement because Task 20's completion criteria explicitly allow either:
+
+* A public deployment URL, or
+* Full one-command reproducibility
+
+The Dockerfile is deployment-ready as-is. Platforms such as Render, Railway, or Fly.io can build and run the application directly from the repository, with environment variables supplied through the platform's dashboard rather than a committed `.env` file.
+
+---
+
+# Independent Extension: Continuous Integration with GitHub Actions
+
+A GitHub Actions workflow was added at:
+
+```text
+.github/workflows/tests.yml
+```
+
+The workflow automatically runs the full pytest suite against the **real running Docker container**, rather than only running in-process tests.
+
+The workflow runs on:
+
+* Every push to `main`
+* Every pull request targeting `main`
+
+## CI Workflow
+
+The workflow performs the following steps:
+
+1. Checks out the repository.
+2. Installs Python.
+3. Installs project dependencies.
+4. Trains the model from scratch.
+5. Creates a temporary `.env` file for CI.
+6. Starts the application using Docker Compose.
+7. Waits for `/api/v1/health` to report that the application is ready.
+8. Runs the complete test suite.
+9. Tears down the containers after testing, regardless of the test result.
+
+This closes an important gap by ensuring that tests are automatically executed against the actual containerized application before changes are merged.
+
+This CI workflow was an independent extension and was implemented after completing Task 19.
+
+---
+
+# What I Learned
+
+Building this project helped me understand that ML deployment involves much more than simply calling:
+
+```python
+model.predict()
+```
+
+I learned how the following components work together as one complete system:
+
+* FastAPI
+* Pydantic validation
+* API versioning
+* API-key authentication
+* Configuration management
+* Structured logging
+* Prometheus monitoring
+* Pytest
+* Docker
+* Docker Compose
+* Integration testing
+* Load testing
+* Continuous integration
+
+One of the most useful parts of the project was learning the difference between **automated tests, integration tests, and load tests**.
+
+Integration testing showed me how to test the real Dockerized API, while load testing showed how the API behaves when many requests arrive concurrently.
+
+I also learned how monitoring can expose problems that normal prediction testing may not reveal.
+
+For example, monitoring helped identify missing Prometheus counter updates for batch predictions. This was a bug that could not have been discovered simply by checking whether `/predict-batch` returned the expected JSON response.
+
+---
+
+# Project Summary
+
+The project demonstrates a complete ML API deployment workflow:
+
+```text
+Train ML Model
+      ↓
+Save Model with Joblib
+      ↓
+FastAPI Application
+      ↓
+Input Validation
+      ↓
+API Authentication
+      ↓
+Versioned API Endpoints
+      ↓
+Prediction Service
+      ↓
+Scikit-learn Inference
+      ↓
+Logging + Monitoring
+      ↓
+Automated Testing
+      ↓
+Integration Testing
+      ↓
+Load Testing
+      ↓
+Docker Containerization
+      ↓
+Docker Compose
+      ↓
+GitHub Actions CI
+```
+The result is a **secure, versioned, tested, monitored, and containerized REST API for machine learning inference**.

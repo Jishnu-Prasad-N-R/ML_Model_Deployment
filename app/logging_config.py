@@ -1,5 +1,5 @@
-import logging
-import os
+import logging, os
+
 from app.config import settings
 from logging.handlers import RotatingFileHandler
 

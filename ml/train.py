@@ -1,3 +1,5 @@
+import json, joblib
+
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -5,8 +7,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from datetime import datetime
-import joblib 
-import json
 
 data = load_iris()
 

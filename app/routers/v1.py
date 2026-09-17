@@ -1,7 +1,7 @@
 import time
 
 from fastapi import APIRouter, HTTPException, Request, Depends
-from app.models.schemas import PredictionInput,PredictionOutput,PredictionBatchInput,PredictionBatchOutput,ModelInfo
+from app.models.schemas import PredictionInput, PredictionOutput, PredictionBatchInput, PredictionBatchOutput, ModelInfo
 from app.models.state import ml_models, model_metadata
 from app.logging_config import logger
 from app.config import settings
