@@ -27,6 +27,15 @@ The goal is to demonstrate the complete process of taking an ML model and turnin
 
 ---
 
+## Live Demo
+
+**Live URL:** https://ml-model-deployment-2y62.onrender.com
+**Interactive docs:** https://ml-model-deployment-2y62.onrender.com/docs
+
+Deployed on Render's free tier. Free-tier services spin down after ~15 minutes of inactivity, so the first request after a period of idleness may take 30–60 seconds to respond while the container restarts — subsequent requests are fast.
+
+---
+
 ## Dataset & Problem
 
 The project uses scikit-learn's built-in **Iris dataset** with `load_iris()`.
@@ -239,11 +248,13 @@ Configuration is handled using **pydantic-settings** and loaded from `.env`.
 | `LOG_LEVEL`           | Logging verbosity                                |
 | `MAX_BATCH_SIZE`      | Maximum inputs allowed per `/predict-batch` call |
 | `API_KEY`             | Secret required for protected endpoints          |
-| `ALLOWED_ORIGINS`     | CORS-allowed origins in JSON array format        |
+| `ALLOWED_ORIGINS`     | CORS-allowed origins in JSON array format         |
 
 The `.env` file is git-ignored.
 
 The `.env.example` file documents the required variable names without containing real secret values.
+
+On the live deployment, these variables are configured directly in Render's dashboard, not committed to the repository.
 
 ---
 
@@ -445,6 +456,8 @@ docker compose restart api
 
 No Docker image rebuild is required when only the model file is replaced.
 
+Note: this bind-mount behavior applies to local Docker Compose only. The live Render deployment builds directly from the Dockerfile, with `ml/saved_model/` files committed to the repository and baked into the image via `COPY . .`, since Render has no access to a local filesystem to bind-mount.
+
 ---
 
 # Local Development Without Docker
@@ -483,6 +496,8 @@ uvicorn app.main:app --reload
 ---
 
 # Example Requests
+
+Replace `http://localhost:8000` with the live URL above to test against the deployed version instead of a local one.
 
 ## Health Check
 
@@ -544,25 +559,6 @@ curl http://localhost:8000/metrics
 
 ---
 
-# Deployment
-
-This project is fully reproducible with a single command:
-
-```bash
-docker compose up --build
-```
-
-A live public deployment, such as Render, Railway, or Fly.io, was not pursued for this submission.
-
-Docker Compose reproducibility was treated as satisfying the project's deployment requirement because Task 20's completion criteria explicitly allow either:
-
-* A public deployment URL, or
-* Full one-command reproducibility
-
-The Dockerfile is deployment-ready as-is. Platforms such as Render, Railway, or Fly.io can build and run the application directly from the repository, with environment variables supplied through the platform's dashboard rather than a committed `.env` file.
-
----
-
 # Independent Extension: Continuous Integration with GitHub Actions
 
 A GitHub Actions workflow was added at:
@@ -594,7 +590,7 @@ The workflow performs the following steps:
 
 This closes an important gap by ensuring that tests are automatically executed against the actual containerized application before changes are merged.
 
-This CI workflow was an independent extension and was implemented after completing Task 19.
+The workflow was successfully verified on GitHub Actions.
 
 ---
 
@@ -666,5 +662,8 @@ Docker Containerization
 Docker Compose
       ↓
 GitHub Actions CI
+      ↓
+Deployed to Render
 ```
-The result is a **secure, versioned, tested, monitored, and containerized REST API for machine learning inference**.
+
+The result is a **secure, versioned, tested, monitored, and containerized REST API for machine learning inference, deployed and publicly reachable.**
